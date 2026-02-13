@@ -19,7 +19,7 @@ export const userRegistrationSchema = z.object({
 
   email: z.string().email({ message: "Invalid email address" }),
 
-  mobile_no: z
+  mobile: z
     .string()
     .trim()
     .transform((val) => val.replace(/\D/g, ""))
@@ -37,7 +37,7 @@ export const userRegistrationSchema = z.object({
       return `+91${mobile}`; // normalized format
     }),
 
-  gender: z.enum(["Male", "Female", "Other"]),
+  gender: z.enum(["male", "female", "other"]),
 
   status: z.enum(["active", "inactive"]),
   location: z
