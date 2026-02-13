@@ -1,5 +1,5 @@
 import { ApiError } from "../../utils/ApiError.js";
-import { ApiResponse } from "../../utils/apiResponse.js";
+import { ApiResponse } from "../../utils/ApiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { User } from "../model/user.model.js";
 import { Parser as CsvParser } from "json2csv"
@@ -96,19 +96,37 @@ const deleteUser = asyncHandler(async (req, res) => {
 
 const getAllUserProfile = asyncHandler(async (req, res) => {
     try {
-        const users = (await User.find({})).toSorted({ createdAt: -1 });
-        
-        if(users.length === 0){
+        const users = await User.find({}).sort({ createdAt: -1 });
+
+        if (users.length === 0) {
             throw new ApiError(404, "No user found");
         }
-    
+
         res.status(200).json(
-            new ApiResponse(200, {Users: users}, "All users fetched successfully")
-        )
+            new ApiResponse(200, { Users: users }, "All users fetched successfully")
+        );
     } catch (error) {
+        console.log("Server Error: ", error);
         throw new ApiError(500, error.message || "Error fetching all users");
     }
-})
+});
+
+const getUserById = asyncHandler(async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id);
+
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+
+        res.status(200).json(
+            new ApiResponse(200, { Users: user }, "User fetched successfully")
+        );
+    } catch (error) {
+        throw new ApiError(500, error.message || "Error fetching user by ID");
+    }
+});
 
 const searchUser = asyncHandler(async (req, res) => {
     try {
@@ -166,21 +184,31 @@ const searchUser = asyncHandler(async (req, res) => {
 
 const exportToCSV = asyncHandler(async (req, res) => {
     try {
-        const users = []
+        const users = [];
         const userData = await User.find({}).lean();
-    
-        userData.forEach((user)=> {
-            const { firstname, lastname, email, mobile, gender, status, location } = user
-            users.push({ firstname, lastname, email, mobile, gender, status, location })
-        })
-    
-        const csvFields = ["Firstname", "Lastname", "Email", "Mobile", "Gender", "Status", "Location"];
-        const csvParser = new CsvParser({csvFields});
+
+        userData.forEach((user) => {
+            const { firstname, lastname, email, mobile, gender, status, location } = user;
+            users.push({ firstname, lastname, email, mobile, gender, status, location });
+        });
+
+        // map labels to actual object keys so values populate correctly
+        const csvFields = [
+            { label: "Firstname", value: "firstname" },
+            { label: "Lastname", value: "lastname" },
+            { label: "Email", value: "email" },
+            { label: "Mobile", value: "mobile" },
+            { label: "Gender", value: "gender" },
+            { label: "Status", value: "status" },
+            { label: "Location", value: "location" },
+        ];
+        // json2csv accepts objects with label/value to map headers to field values
+        const csvParser = new CsvParser({ fields: csvFields });
         const csvData = csvParser.parse(users);
-        
+
         res.setHeader("Content-Type", "text/csv");
-        res.setHeader("Content-Disposition", "attachment: filename=Users-Details.csv");
-    
+        res.setHeader("Content-Disposition", "attachment; filename=Users-Details.csv");
+
         res.status(200).end(csvData);
     } catch (error) {
         throw new ApiError(500, "Error generating CSV file");
@@ -193,5 +221,6 @@ export {
     deleteUser,
     getAllUserProfile,
     searchUser,
-    exportToCSV
+    exportToCSV,
+    getUserById
 }
