@@ -65,7 +65,7 @@ export const userUpdateSchema = z.object({
 
   email: z.string().email({ message: "Invalid email address" }).optional(),
 
-  mobile_no: z
+  mobile: z
     .string()
     .trim()
     .transform((val) => val.replace(/\D/g, ""))
@@ -83,7 +83,7 @@ export const userUpdateSchema = z.object({
       return `+91${mobile}`; // normalized format
     }).optional(),
 
-  gender: z.enum(["Male", "Female", "Other"]).optional(),
+  gender: z.enum(["male", "female", "other"]).optional(),
 
   status: z.enum(["active", "inactive"]).optional(),
 
